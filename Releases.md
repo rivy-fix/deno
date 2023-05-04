@@ -6,6 +6,250 @@ https://github.com/denoland/deno/releases
 We also have one-line install commands at:
 https://github.com/denoland/deno_install
 
+### 1.33.1 / 2023.04.28
+
+- fix(ext/fetch): subview Uint8Array in Req/Resp (#18890)
+- fix(ext/websocket): client connect URI (#18892)
+- fix(ext/websocket): restore op_ws_send_ping (#18891)
+- fix(repl): don't panic on undefined exception (#18888)
+
+### 1.33.0 / 2023.04.27
+
+- BREAKING(unstable): remove "Deno.serve(handler, options)" overload (#18759)
+- Revert "chore(ext/websocket): Add autobahn|testsuite fuzzingclient (#…
+  (#18856)
+- feat(bench): add `--no-run` flag (#18433)
+- feat(cli): don't check permissions for statically analyzable dynamic imports
+  (#18713)
+- feat(cli): flatten deno.json configuaration (#17799)
+- feat(ext/ffi): support marking symbols as optional (#18529)
+- feat(ext/http): Rework Deno.serve using hyper 1.0-rc3 (#18619)
+- feat(ext/kv): add more atomic operation helpers (#18854)
+- feat(ext/kv): return ok bool from atomic commit (#18873)
+- feat(ext/url): `URL.canParse` (#18286)
+- feat(lint): add `Deno.run` to `no-deprecated-deno-api` (#18869)
+- feat(node/crypto): Elliptic Curve Diffie-Hellman (ECDH) support (#18832)
+- feat(node/http): implement ClientRequest.setTimeout() (#18783)
+- feat(task): introduce built-in `unset` command to `deno task` (#18606)
+- feat: Deprecate Deno.run API in favor of Deno.Command (#17630) (#18866)
+- fix(compile): write bytes directly to output file (#18777)
+- fix(core): Wrap safe collections' argument of primordials (#18750)
+- fix(coverage): exclude test files (#18748)
+- fix(dts): `URLPatternComponentResult` groups should have possibly undefined
+  key values (#18643)
+- fix(ext/node): add crypto.sign|verify methods (#18765)
+- fix(ext/node): fix hash.flush (#18818)
+- fix(ext/node): implement asymmetric keygen (#18651)
+- fix(ext/node): improve vm.runInThisContext (#18767)
+- fix(ext/node): prime generation (#18861)
+- fix(lsp): show dependency errors for repeated imports (#18807)
+- fix(npm): only include top level packages in top level node_modules directory
+  (#18824)
+- fix(test): allow explicit undefined for boolean test options (#18786)
+- fix(test): handle dispatched exceptions from test functions (#18853)
+- perf(ext/http): avoid spread arg deopt in op_http_wait (#18850)
+- perf(ext/http): optimize away code based on callback length (#18849)
+- perf(ext/http): optimize for zero or one-packet response streams (#18834)
+- perf(ext/http): use smi for slab IDs (#18848)
+- perf(ext/websocket): various performance improvements (#18862)
+
+### 1.32.5 / 2023.04.18
+
+- feat(UNSTABLE/kv): AtomicOperation#sum (#18704)
+- fix(core): Use safe primordials wrappers (#18687)
+- fix(ext/node): add req.socket.remoteAddress (#18733)
+- fix(ext/node): implement crypto.createVerify (#18703)
+- fix(ext/node): polyfill response._implicitHeader method (#18738)
+- fix(ext/websocket): Avoid write deadlock that requires read_frame to complete
+  (#18705)
+- fix(lsp): ensure language server status works on unix (#18727)
+- fix(npm): eagerly reload package information when version from lockfile not
+  found locally (#18673)
+- fix(path): Remove non node symbols (#18630)
+- fix(test): add process sigint handler for --watch (#18678)
+- perf(ext/websocket): make `op_server_ws_next_event` deferred (#18632)
+- perf(ops): directly respond for eager ops (#18683)
+
+### 1.32.4 / 2023.04.12
+
+- Revert "fix(cli): don't store blob and data urls in the module cache (#18261)"
+  (#18572)
+- feat(core): sync io ops in core (#18603)
+- feat(ext/http): add an op to perform raw HTTP upgrade (#18511)
+- fix(core): preserve syntax error locations in dynamic imports (#18664)
+- fix(ext/cache): cache.put overwrites previous call (#18649)
+- fix(ext/kv): keys must be arrays (#18655)
+- fix(ext/node): add X509Certificate (#18625)
+- fix(ext/node): add symmetric keygen (#18609)
+- fix(ext/node): fix unable to resolve fraction.js (#18544)
+- fix(ext/node): implement hkdf-expand (#18612)
+- fix(ext/node): json encode binary command name (#18596)
+- fix(npm): cache bust npm specifiers more aggressively (#18636)
+- fix(npm): do not "npm install" when npm specifier happens to match
+  package.json entry (#18660)
+- fix(npm): reload an npm package's dependency's information when version not
+  found (#18622)
+- perf(ext/io): remove a data copy from File write (#18601)
+- perf(ext/websocket): replace tokio_tungstenite server with fastwebsockets
+  (#18587)
+
+### 1.32.3 / 2023.04.01
+
+- fix(check): ensure diagnostics caused by changes in other files get
+  invalidated between runs (#18541)
+- fix(ext/ffi): crash when same reference struct is used in two fields (#18531)
+- fix(lsp): add a document preload file system entry limit (#18553)
+- fix(repl): disable language server document preloading in the repl (#18543)
+- fix(test): don't swallow sanitizer errors with permissions (#18550)
+- perf(check): faster source hashing (#18534)
+
+### 1.32.2 / 2023.03.31
+
+- Revert "refactor(ext/node): Use Deno.inspect (#17960)" (#18491)
+- feat(core): initialize SQLite off-main-thread (#18401)
+- feat(ext/kv): return versionstamp from set/commit (#18512)
+- feat(ext/node): add `crypto.checkPrime` API (#18465)
+- feat(ext/node): implement crypto.createSecretKey (#18413)
+- feat(test): print pending tests on sigint (#18246)
+- feat: port node:zlib to rust (#18291)
+- fix(cli): add colors to "Module not found" error frame (#18437)
+- fix(cli): don't store blob and data urls in the module cache (#18261)
+- fix(cli/bench): look for clone3 syscalls for thread count (#18456)
+- fix(core): located_script_name macro was using format syntax (#18388)
+- fix(core): panic at build time if extension code contains anything other than
+  7-bit ASCII (#18372)
+- fix(core): restore cache journal mode to TRUNCATE and tweak tokio test in
+  CacheDB (#18469)
+- fix(coverage): ignore files from npm registry (#18457)
+- fix(dts): improve types for the Deno.KV API (#18510)
+- fix(ext/kv): add missing `getMany` method (#18410)
+- fix(ext/node): add aes-128-ecb algorithm support (#18412)
+- fix(ext/node): add missing _preloadModules hook (#18447)
+- fix(ext/node): implement crypto.Sign (RSA/PEM/SHA{224,256,384,512}) (#18471)
+- fix(ext/node): make cipher/decipher transform stream (#18408)
+- fix(lsp): `textDocument/references` should respect `includeDeclaration`
+  (#18496)
+- fix(lsp): better handling of `data:` urls (#18527)
+- fix(lsp): include all diagnosable documents on initialize (#17979)
+- fix(ops): fallback when FastApiOneByteString is not utf8 (#18518)
+- fix(repl): improve package.json support (#18497)
+- fix(streams): add support `Float64Array` to `ReadableStreamByobReader`
+  (#18188)
+- fix: Add missing `processenv` winapi feature to deno_io (#18485)
+- fix: upgrade to TypeScript 5.0.3 (#18532)
+- perf(ext/websocket): efficient event kind serialization (#18509)
+- perf(ext/websocket): special op for sending binary data frames (#18506)
+- perf(ext/websocket): special op for sending text data frames (#18507)
+- perf(ext/websocket): use opAsync2 to avoid spread deopt (#18525)
+- perf: `const` op declaration (#18288)
+
+### 1.32.1 / 2023.03.23
+
+- fix(core): disable resizable ArrayBuffer and growable SharedArrayBuffer
+  (#18395)
+- fix(cli): restore `deno run -` to handle stdin as typescript (#18391)
+- fix(inspect): ensure non-compact output when object literal has newline in
+  entry text (#18366)
+- fix(lsp): ensure `enablePaths` works when clients do not provide a trailing
+  slash for workspace dir (#18373)
+
+### 1.32.0 / 2023.03.22
+
+- BREAKING(unstable): remove WebGPU (#18094)
+- feat(ext/fs): FileInfo.dev is supported on Windows (#18237)
+- feat(cli): --ext parameter for run, compile, and bundle (#17172)
+- feat(compile): Add support for web workers in standalone mode (#17657)
+- feat(compile): Enable multiple roots for a standalone module graph (#17663)
+- feat(core): deno_core::extension! macro to simplify extension registration
+  (#18210)
+- feat(ext/kv): key-value store (#18232)
+- feat(ext/net): Add multicasting APIs to DatagramConn (#10706) (#17811)
+- feat(ext/url): URLSearchParams.size (#17884)
+- feat(repl): add `DENO_REPL_HISTORY` to change history file path (#18047)
+- feat(serde_v8): support BigInt serialization (#18225)
+- feat: TypeScript 5.0.2 (except decorators) (#18294)
+- fix(cli): preserve blob store when resetting file watcher (#18253)
+- fix(cli/integration): clippy lints (#18248)
+- fix(ext/kv): don't request permissions for ":memory:" (#18346)
+- fix(ext/kv): reverse mapping between `AnyValue::Bool` and `KeyPart::Bool`
+  (#18365)
+- fix(ext/node): add createDecipheriv (#18245)
+- fix(ext/node): resource leak in createHmac (#18229)
+- fix(ext/node): use Deno.Command from `ext:runtime` (#18289)
+- fix(repl): Hide indexable properties in tab completion (#18141)
+- fix(runtime): Extract error code for all OS error variants (#17958)
+- fix: include error in message about not being able to create the TypeScript
+  cache (#18356)
+- perf(check): type check local files only when not using `--all` (#18329)
+- perf(core) Reduce copying and cloning in extension initialization (#18252)
+- perf(core) Reduce script name and script code copies (#18298)
+- perf(core): preserve ops between snapshots (#18080)
+- perf(core): use static specifier in ExtensionFileSource (#18271)
+- perf: disable WAL for transpiled source cache (#18084)
+- perf: disable runtime snapshot compression (#18239)
+
+### 1.31.3 / 2023.03.16
+
+- fix(check): regression where config "types" entries caused type checking
+  errors (#18124)
+- fix(core): Upgrades bytes crate from =1.2.1 to ^1.4.0 (#18123)
+- fix(core): `SafePromiseAll` to be unaffected by `Array#@@iterator` (#17542)
+- fix(core/internal): fix typo in primordial type definitions (#18125)
+- fix(ext/fs): retry if file already exists in makeTempFile (#17787)
+- fix(ext/http): abort request signal when response errors (#17822)
+- fix(ext/node): add crypto.createCipheriv (#18091)
+- fix(ext/node): implement "ascii" encoding for node:fs writeFile() (#18097)
+- fix(ext/web): Stop using `globalThis.ReadableStream` in `Blob` (#18187)
+- fix(info/doc): add missing `--no-lock` and `--lock` flags (#18166)
+- fix(lsp): avoid calling client while holding lock (#18197)
+- fix(npm): "not implemented scheme" message should properly show the scheme
+  (#18209)
+- fix(npm): show a progress bar when initializing the node_modules folder
+  (#18136)
+- fix(repl): do not panic deleting `Deno` or deleting all its properties
+  (#18211)
+- fix: ensure no node_modules directory is created when a package.json exists
+  and no npm dependencies are used (#18134)
+- perf: do not depend on iana-time-zone (#18088)
+
+### 1.31.2 / 2023.03.10
+
+- Revert "perf: disable snapshot compression (#18061)" (#18074)
+- deps: bump `regexp` to `^1.7.0` (#17966)
+- deps: bump once_cell to ^1.17.1 (#18075)
+- feat(core): prevent isolate drop for CLI main worker (#18059)
+- feat(ext/ffi): Make External pointers keep reference to V8 buffer (#17955)
+- feat(ops): reland fast zero copy string arguments (#17996)
+- feat(ops): relational ops (#18023)
+- fix(check): include dts files in tsc roots (#18026)
+- fix(cli): add space after period in `--v8-flags` (#18063)
+- fix(cli,ext/web): Upgrading uuid from =1.1.2 to 1.3.0 (#17963)
+- fix(core): introduce `SafeRegExp` to primordials (#17592)
+- fix(ext/crypto): correctly limit ECDSA and hash algorithms (#18030)
+- fix(ext/ffi): Remove deno_core::OpState qualifiers, fix ops returning pointer
+  defaults (#17959)
+- fix(ext/node): remove unused _hex module (#18045)
+- fix(ext/node): util.types.isSharedArrayBuffer (#17836)
+- fix(ext/webstorage): check size of inputs before insert (#18087)
+- fix(lockfile): don't touch lockfile is npm specifiers are identical (#17973)
+- fix(npm): improve peer dependency resolution with circular dependencies
+  (#18069)
+- fix(prompt): better output with control chars (#18108)
+- fix(rumtime): Add `Deno.` prefix for registered symbols (#18086)
+- fix(runtime/windows): ensure `Deno.stdin.setRaw(false)` properly disables raw
+  mode (#17983)
+- fix: Split extension registration and snapshotting (#18098)
+- fix: attempt to only allow one deno process to update the node_modules folder
+  at a time (#18058)
+- fix: lazily surface errors in package.json deps parsing (#17974)
+- perf(core): over-allocate in ModuleMap when running from snapshot (#18083)
+- perf(ext/node): improve createHash performance (#18033)
+- perf: disable snapshot compression (#18061)
+- perf: don't add unload event listener (#18082)
+- perf: move runtime bootstrap code to snapshot time (#18062)
+- perf: move setting up Deno namespace to snapshot time (#18067)
+- wpt: unlock nightly with --no-ignore (#17998)
+
 ### 1.31.1 / 2023.02.25
 
 - feat: add `DENO_NO_PACKAGE_JSON` env var (#17926)

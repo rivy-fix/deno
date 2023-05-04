@@ -5,29 +5,28 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::path::PathBuf;
 
-use deno_core::anyhow::anyhow;
 use deno_core::anyhow::bail;
 use deno_core::error::AnyError;
-use deno_graph::npm::NpmPackageReq;
-use deno_graph::semver::VersionReq;
+use deno_npm::registry::parse_dep_entry_name_and_raw_version;
+use deno_npm::registry::PackageDepNpmSchemeValueParseError;
 use deno_runtime::deno_node::PackageJson;
+use deno_semver::npm::NpmPackageReq;
+use deno_semver::npm::NpmVersionReqSpecifierParseError;
+use deno_semver::VersionReq;
+use thiserror::Error;
 
-/// Gets the name and raw version constraint taking into account npm
-/// package aliases.
-pub fn parse_dep_entry_name_and_raw_version<'a>(
-  key: &'a str,
-  value: &'a str,
-) -> Result<(&'a str, &'a str), AnyError> {
-  if let Some(package_and_version) = value.strip_prefix("npm:") {
-    if let Some((name, version)) = package_and_version.rsplit_once('@') {
-      Ok((name, version))
-    } else {
-      bail!("could not find @ symbol in npm url '{}'", value);
-    }
-  } else {
-    Ok((key, value))
-  }
+#[derive(Debug, Error, Clone)]
+pub enum PackageJsonDepValueParseError {
+  #[error(transparent)]
+  SchemeValue(#[from] PackageDepNpmSchemeValueParseError),
+  #[error(transparent)]
+  Specifier(#[from] NpmVersionReqSpecifierParseError),
+  #[error("Not implemented scheme '{scheme}'")]
+  Unsupported { scheme: String },
 }
+
+pub type PackageJsonDeps =
+  BTreeMap<String, Result<NpmPackageReq, PackageJsonDepValueParseError>>;
 
 /// Gets an application level package.json's npm package requirements.
 ///
@@ -37,48 +36,43 @@ pub fn parse_dep_entry_name_and_raw_version<'a>(
 /// entries to npm specifiers which can then be used in the resolver.
 pub fn get_local_package_json_version_reqs(
   package_json: &PackageJson,
-) -> Result<BTreeMap<String, NpmPackageReq>, AnyError> {
+) -> PackageJsonDeps {
+  fn parse_entry(
+    key: &str,
+    value: &str,
+  ) -> Result<NpmPackageReq, PackageJsonDepValueParseError> {
+    if value.starts_with("workspace:")
+      || value.starts_with("file:")
+      || value.starts_with("git:")
+      || value.starts_with("http:")
+      || value.starts_with("https:")
+    {
+      return Err(PackageJsonDepValueParseError::Unsupported {
+        scheme: value.split(':').next().unwrap().to_string(),
+      });
+    }
+    let (name, version_req) = parse_dep_entry_name_and_raw_version(key, value)
+      .map_err(PackageJsonDepValueParseError::SchemeValue)?;
+
+    let result = VersionReq::parse_from_specifier(version_req);
+    match result {
+      Ok(version_req) => Ok(NpmPackageReq {
+        name: name.to_string(),
+        version_req: Some(version_req),
+      }),
+      Err(err) => Err(PackageJsonDepValueParseError::Specifier(err)),
+    }
+  }
+
   fn insert_deps(
     deps: Option<&HashMap<String, String>>,
-    result: &mut BTreeMap<String, NpmPackageReq>,
-  ) -> Result<(), AnyError> {
+    result: &mut PackageJsonDeps,
+  ) {
     if let Some(deps) = deps {
       for (key, value) in deps {
-        if value.starts_with("workspace:")
-          || value.starts_with("file:")
-          || value.starts_with("git:")
-          || value.starts_with("http:")
-          || value.starts_with("https:")
-        {
-          // skip these specifiers for now
-          continue;
-        }
-        let (name, version_req) =
-          parse_dep_entry_name_and_raw_version(key, value)?;
-
-        let version_req = {
-          let result = VersionReq::parse_from_specifier(version_req);
-          match result {
-            Ok(version_req) => version_req,
-            Err(e) => {
-              let err = anyhow!("{:#}", e).context(concat!(
-                "Parsing version constraints in the application-level ",
-                "package.json is more strict at the moment"
-              ));
-              return Err(err);
-            }
-          }
-        };
-        result.insert(
-          key.to_string(),
-          NpmPackageReq {
-            name: name.to_string(),
-            version_req: Some(version_req),
-          },
-        );
+        result.insert(key.to_string(), parse_entry(key, value));
       }
     }
-    Ok(())
   }
 
   let deps = package_json.dependencies.as_ref();
@@ -87,10 +81,10 @@ pub fn get_local_package_json_version_reqs(
 
   // insert the dev dependencies first so the dependencies will
   // take priority and overwrite any collisions
-  insert_deps(dev_deps, &mut result)?;
-  insert_deps(deps, &mut result)?;
+  insert_deps(dev_deps, &mut result);
+  insert_deps(deps, &mut result);
 
-  Ok(result)
+  result
 }
 
 /// Attempts to discover the package.json file, maybe stopping when it
@@ -147,7 +141,7 @@ mod test {
       (
         "test",
         "npm:package",
-        Err("could not find @ symbol in npm url 'npm:package'"),
+        Err("Could not find @ symbol in npm url 'npm:package'"),
       ),
     ];
     for (key, value, expected_result) in cases {
@@ -157,6 +151,23 @@ mod test {
         Err(err) => assert_eq!(err.to_string(), expected_result.err().unwrap()),
       }
     }
+  }
+
+  fn get_local_package_json_version_reqs_for_tests(
+    package_json: &PackageJson,
+  ) -> BTreeMap<String, Result<NpmPackageReq, String>> {
+    get_local_package_json_version_reqs(package_json)
+      .into_iter()
+      .map(|(k, v)| {
+        (
+          k,
+          match v {
+            Ok(v) => Ok(v),
+            Err(err) => Err(err.to_string()),
+          },
+        )
+      })
+      .collect::<BTreeMap<_, _>>()
   }
 
   #[test]
@@ -171,21 +182,21 @@ mod test {
       // should be ignored
       ("other".to_string(), "^3.2".to_string()),
     ]));
-    let result = get_local_package_json_version_reqs(&package_json).unwrap();
+    let deps = get_local_package_json_version_reqs_for_tests(&package_json);
     assert_eq!(
-      result,
+      deps,
       BTreeMap::from([
         (
           "test".to_string(),
-          NpmPackageReq::from_str("test@^1.2").unwrap()
+          Ok(NpmPackageReq::from_str("test@^1.2").unwrap())
         ),
         (
           "other".to_string(),
-          NpmPackageReq::from_str("package@~1.3").unwrap()
+          Ok(NpmPackageReq::from_str("package@~1.3").unwrap())
         ),
         (
           "package_b".to_string(),
-          NpmPackageReq::from_str("package_b@~2.2").unwrap()
+          Ok(NpmPackageReq::from_str("package_b@~2.2").unwrap())
         )
       ])
     );
@@ -198,18 +209,20 @@ mod test {
       "test".to_string(),
       "1.x - 1.3".to_string(),
     )]));
-    let err = get_local_package_json_version_reqs(&package_json)
-      .err()
-      .unwrap();
+    let map = get_local_package_json_version_reqs_for_tests(&package_json);
     assert_eq!(
-      format!("{err:#}"),
-      concat!(
-        "Parsing version constraints in the application-level ",
-        "package.json is more strict at the moment: Invalid npm specifier ",
-        "version requirement. Unexpected character.\n",
-        "   - 1.3\n",
-        "  ~"
-      )
+      map,
+      BTreeMap::from([(
+        "test".to_string(),
+        Err(
+          concat!(
+            "Invalid npm specifier version requirement. Unexpected character.\n",
+            "   - 1.3\n",
+            "  ~"
+          )
+          .to_string()
+        )
+      )])
     );
   }
 
@@ -218,19 +231,41 @@ mod test {
     let mut package_json = PackageJson::empty(PathBuf::from("/package.json"));
     package_json.dependencies = Some(HashMap::from([
       ("test".to_string(), "1".to_string()),
-      ("work".to_string(), "workspace:1.1.1".to_string()),
-      ("file".to_string(), "file:something".to_string()),
-      ("git".to_string(), "git:something".to_string()),
-      ("http".to_string(), "http://something".to_string()),
-      ("https".to_string(), "https://something".to_string()),
+      ("work-test".to_string(), "workspace:1.1.1".to_string()),
+      ("file-test".to_string(), "file:something".to_string()),
+      ("git-test".to_string(), "git:something".to_string()),
+      ("http-test".to_string(), "http://something".to_string()),
+      ("https-test".to_string(), "https://something".to_string()),
     ]));
-    let result = get_local_package_json_version_reqs(&package_json).unwrap();
+    let result = get_local_package_json_version_reqs_for_tests(&package_json);
     assert_eq!(
       result,
-      BTreeMap::from([(
-        "test".to_string(),
-        NpmPackageReq::from_str("test@1").unwrap()
-      )])
+      BTreeMap::from([
+        (
+          "file-test".to_string(),
+          Err("Not implemented scheme 'file'".to_string()),
+        ),
+        (
+          "git-test".to_string(),
+          Err("Not implemented scheme 'git'".to_string()),
+        ),
+        (
+          "http-test".to_string(),
+          Err("Not implemented scheme 'http'".to_string()),
+        ),
+        (
+          "https-test".to_string(),
+          Err("Not implemented scheme 'https'".to_string()),
+        ),
+        (
+          "test".to_string(),
+          Ok(NpmPackageReq::from_str("test@1").unwrap())
+        ),
+        (
+          "work-test".to_string(),
+          Err("Not implemented scheme 'workspace'".to_string()),
+        )
+      ])
     );
   }
 }

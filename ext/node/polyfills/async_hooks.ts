@@ -4,8 +4,9 @@
 // This implementation is inspired by "workerd" AsyncLocalStorage implementation:
 // https://github.com/cloudflare/workerd/blob/77fd0ed6ddba184414f0216508fc62b06e716cab/src/workerd/api/node/async-hooks.c++#L9
 
-import { validateFunction } from "internal:deno_node/polyfills/internal/validators.mjs";
-import { core } from "internal:deno_node/polyfills/_core.ts";
+import { validateFunction } from "ext:deno_node/internal/validators.mjs";
+
+const { core } = globalThis.__bootstrap;
 
 function assert(cond: boolean) {
   if (!cond) throw new Error("Assertion failed");
@@ -84,7 +85,7 @@ class AsyncContextFrame {
 
     const propagate = (parent: AsyncContextFrame) => {
       parent.storage = parent.storage.filter((entry) => !entry.key.isDead());
-      parent.storage.forEach((entry) => this.storage.push(entry));
+      parent.storage.forEach((entry) => this.storage.push(entry.clone()));
 
       if (maybeStorageEntry) {
         const existingEntry = this.storage.find((entry) =>
@@ -249,6 +250,10 @@ class StorageEntry {
   constructor(key: StorageKey, value: unknown) {
     this.key = key;
     this.value = value;
+  }
+
+  clone() {
+    return new StorageEntry(this.key, this.value);
   }
 }
 
