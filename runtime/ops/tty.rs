@@ -270,10 +270,21 @@ fn console_size_from_fd(
     {
       return Err(Error::last_os_error());
     }
-    Ok(ConsoleSize {
-      cols: bufinfo.srWindow.Right as u32 - bufinfo.srWindow.Left as u32 + 1,
-      rows: bufinfo.srWindow.Bottom as u32 - bufinfo.srWindow.Top as u32 + 1,
-    })
+    let cols = if ((bufinfo.srWindow.Right >= bufinfo.srWindow.Left)
+      && (bufinfo.srWindow.Left >= 0))
+    {
+      bufinfo.srWindow.Right as u32 - bufinfo.srWindow.Left as u32 + 1;
+    } else {
+      0
+    };
+    let rows = if ((bufinfo.srWindow.Bottom >= bufinfo.srWindow.Top)
+      && (bufinfo.srWindow.Top >= 0))
+    {
+      bufinfo.srWindow.Bottom as u32 - bufinfo.srWindow.Top as u32 + 1;
+    } else {
+      0
+    };
+    Ok(ConsoleSize { cols, rows })
   }
 }
 
