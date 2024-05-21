@@ -270,20 +270,19 @@ fn console_size_from_fd(
     {
       return Err(Error::last_os_error());
     }
-    let cols = if ((bufinfo.srWindow.Right >= bufinfo.srWindow.Left)
-      && (bufinfo.srWindow.Left >= 0))
-    {
-      bufinfo.srWindow.Right as u32 - bufinfo.srWindow.Left as u32 + 1;
-    } else {
-      0
-    };
-    let rows = if ((bufinfo.srWindow.Bottom >= bufinfo.srWindow.Top)
-      && (bufinfo.srWindow.Top >= 0))
-    {
-      bufinfo.srWindow.Bottom as u32 - bufinfo.srWindow.Top as u32 + 1;
-    } else {
-      0
-    };
+
+    // calculate the size of the visible window
+    // * use over/under-flow protections b/c MSDN docs only imply that srWindow components are all non-negative
+    // * ref: <https://docs.microsoft.com/en-us/windows/console/console-screen-buffer-info-str> @@ <https://archive.is/sfjnm>
+    let cols = std::cmp::max(
+      bufinfo.srWindow.Right as i32 - bufinfo.srWindow.Left as i32 + 1,
+      0,
+    ) as u32;
+    let rows = std::cmp::max(
+      bufinfo.srWindow.Bottom as i32 - bufinfo.srWindow.Top as i32 + 1,
+      0,
+    ) as u32;
+
     Ok(ConsoleSize { cols, rows })
   }
 }
